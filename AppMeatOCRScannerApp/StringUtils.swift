@@ -51,6 +51,28 @@ extension Character {
 }
 
 extension String {
+        
+    struct ExtractedInvoiceValue: Hashable {
+        let range: Range<String.Index>
+        let value: String
+        let type: ViewController.CaptureType
+    }
+    
+    func extractInvoiceValue() -> ExtractedInvoiceValue? {
+        if let extractedBankGiro = extractBankGiroNumber() {
+            return .init(range: extractedBankGiro.0, value: extractedBankGiro.1, type: .accountNumber)
+        }
+        
+        if let extractedReference = extractSwedishInvoiceNumber() {
+            return .init(range: extractedReference.0, value: extractedReference.1, type: .reference)
+        }
+        
+        if let extranctedAmount = extractAmount() {
+            return .init(range: extranctedAmount.0, value: extranctedAmount.1, type: .amount)
+        }
+        
+        return nil
+    }
     
     func extractBankGiroNumber() -> (Range<String.Index>, String)? {
 
@@ -110,76 +132,31 @@ extension String {
         return (range, result)
     }
     
-    
-	// Extracts the first US-style phone number found in the string, returning
-	// the range of the number and the number itself as a tuple.
-	// Returns nil if no number is found.
-	func extractPhoneNumber() -> (Range<String.Index>, String)? {
-		// Do a first pass to find any substring that could be a US phone
-		// number. This will match the following common patterns and more:
-		// xxx-xxx-xxxx
-		// xxx xxx xxxx
-		// (xxx) xxx-xxxx
-		// (xxx)xxx-xxxx
-		// xxx.xxx.xxxx
-		// xxx xxx-xxxx
-		// xxx/xxx.xxxx
-		// +1-xxx-xxx-xxxx
-		// Note that this doesn't only look for digits since some digits look
-		// very similar to letters. This is handled later.
-		let pattern = #"""
-		(?x)					# Verbose regex, allows comments
-		(?:\+1-?)?				# Potential international prefix, may have -
-		[(]?					# Potential opening (
-		\b(\w{3})				# Capture xxx
-		[)]?					# Potential closing )
-		[\ -./]?				# Potential separator
-		(\w{3})					# Capture xxx
-		[\ -./]?				# Potential separator
-		(\w{4})\b				# Capture xxxx
-		"""#
-		
-		guard let range = self.range(of: pattern, options: .regularExpression, range: nil, locale: nil) else {
-			// No phone number found.
-			return nil
-		}
-		
-		// Potential number found. Strip out punctuation, whitespace and country
-		// prefix.
-		var phoneNumberDigits = ""
-		let substring = String(self[range])
-		let nsrange = NSRange(substring.startIndex..., in: substring)
-		do {
-			// Extract the characters from the substring.
-			let regex = try NSRegularExpression(pattern: pattern, options: [])
-			if let match = regex.firstMatch(in: substring, options: [], range: nsrange) {
-				for rangeInd in 1 ..< match.numberOfRanges {
-					let range = match.range(at: rangeInd)
-					let matchString = (substring as NSString).substring(with: range)
-					phoneNumberDigits += matchString as String
-				}
-			}
-		} catch {
-			print("Error \(error) when creating pattern")
-		}
-		
-		// Must be exactly 10 digits.
-		guard phoneNumberDigits.count == 10 else {
-			return nil
-		}
-		
-		// Substitute commonly misrecognized characters, for example: 'S' -> '5' or 'l' -> '1'
-		var result = ""
-		let allowedChars = "0123456789"
-		for var char in phoneNumberDigits {
-			char = char.getSimilarCharacterIfNotIn(allowedChars: allowedChars)
-			guard allowedChars.contains(char) else {
-				return nil
-			}
-			result.append(char)
-		}
-		return (range, result)
-	}
+    func extractAmount() -> (Range<String.Index>, String)? {
+        print(self)
+
+        let pattern = "\\d{1,7}\\s[05]0"
+        guard let range = self.range(of: pattern, options: .regularExpression, range: nil, locale: nil) else {
+            // No phone number found.
+            return nil
+        }
+        
+
+
+        let phoneNumberDigits = String(self[range])
+        
+        // Substitute commonly misrecognized characters, for example: 'S' -> '5' or 'l' -> '1'
+        var result = ""
+        let allowedChars = "0123456789 "
+        for var char in phoneNumberDigits {
+            char = char.getSimilarCharacterIfNotIn(allowedChars: allowedChars)
+            guard allowedChars.contains(char) else {
+                return nil
+            }
+            result.append(char)
+        }
+        return (range, result)
+    }
 }
 
 class StringTracker {
@@ -189,11 +166,11 @@ class StringTracker {
 	
 	// Dictionary of seen strings. Used to get stable recognition before
 	// displaying anything.
-	var seenStrings = [String: StringObservation]()
+    var seenStrings = [String.ExtractedInvoiceValue: StringObservation]()
 	var bestCount = Int64(0)
-	var bestString = ""
+    var bestString: String.ExtractedInvoiceValue?
 
-	func logFrame(strings: [String]) {
+	func logFrame(strings: [String.ExtractedInvoiceValue]) {
 		for string in strings {
 			if seenStrings[string] == nil {
 				seenStrings[string] = (lastSeen: Int64(0), count: Int64(-1))
@@ -203,7 +180,7 @@ class StringTracker {
 			print("Seen \(string) \(seenStrings[string]?.count ?? 0) times")
 		}
 	
-		var obsoleteStrings = [String]()
+		var obsoleteStrings = [String.ExtractedInvoiceValue]()
 
 		// Go through strings and prune any that have not been seen in while.
 		// Also find the (non-pruned) string with the greatest count.
@@ -228,7 +205,7 @@ class StringTracker {
 		frameIndex += 1
 	}
 	
-	func getStableString() -> String? {
+	func getStableString() -> String.ExtractedInvoiceValue? {
 		// Require the recognizer to see the same string at least 10 times.
 		if bestCount >= 10 {
 			return bestString
@@ -237,9 +214,9 @@ class StringTracker {
 		}
 	}
 	
-	func reset(string: String) {
+	func reset(string: String.ExtractedInvoiceValue) {
 		seenStrings.removeValue(forKey: string)
 		bestCount = 0
-		bestString = ""
+		bestString = nil
 	}
 }

@@ -13,7 +13,28 @@ class ViewController: UIViewController {
     // MARK: - UI objects
     @IBOutlet weak var previewView: PreviewView!
     @IBOutlet weak var cutoutView: UIView!
-    @IBOutlet weak var numberView: UILabel!
+    @IBOutlet weak var referensLabel: UILabel!
+    @IBOutlet weak var amountLabel: UILabel!
+    @IBOutlet weak var accountNumberLabel: UILabel!
+    
+    var reference: String? {
+        didSet {
+            referensLabel.text = String(reference?.split(separator: " ").first ?? "")
+        }
+    }
+    
+    var amount: String? {
+        didSet {
+            amountLabel.text = amount?.replacingOccurrences(of: " ", with: ",")
+        }
+    }
+    
+    var accountNumber: String? {
+        didSet {
+            accountNumberLabel.text = String(accountNumber?.split(separator: "#").first ?? "")
+        }
+    }
+    
     var maskLayer = CAShapeLayer()
     // Device orientation. Updated whenever the orientation changes to a
     // different supported orientation.
@@ -21,12 +42,12 @@ class ViewController: UIViewController {
     
     // MARK: - Capture related objects
     private let captureSession = AVCaptureSession()
-    let captureSessionQueue = DispatchQueue(label: "com.example.apple-samplecode.CaptureSessionQueue")
+    let captureSessionQueue = DispatchQueue(label: "com.appmeat.invoice-scanner.CaptureSessionQueue")
     
     var captureDevice: AVCaptureDevice?
     
     var videoDataOutput = AVCaptureVideoDataOutput()
-    let videoDataOutputQueue = DispatchQueue(label: "com.example.apple-samplecode.VideoDataOutputQueue")
+    let videoDataOutputQueue = DispatchQueue(label: "com.appmeat.invoice-scanner.VideoDataOutputQueue")
     
     // MARK: - Region of interest (ROI) and text orientation
     // Region of video data output buffer that recognition should be run on.
@@ -146,7 +167,7 @@ class ViewController: UIViewController {
         // Move the number view down to under cutout.
         var numFrame = cutout
         numFrame.origin.y += numFrame.size.height
-        numberView.frame = numFrame
+        referensLabel.frame = numFrame
     }
     
     func setupOrientationAndTransform() {
@@ -238,28 +259,50 @@ class ViewController: UIViewController {
     
     // MARK: - UI drawing and interaction
     
-    func showString(string: String) {
-        // Found a definite number.
-        // Stop the camera synchronously to ensure that no further buffers are
-        // received. Then update the number view asynchronously.
+    enum CaptureType: Hashable {
+        case reference
+        case amount
+        case accountNumber
+    }
+    
+    func showString(string: String, type: CaptureType) {
+        
+        guard currentStringFor(type: type) != string else { return }
+
         captureSessionQueue.sync {
-            self.captureSession.stopRunning()
             DispatchQueue.main.async {
-                self.numberView.text = string
-                self.numberView.isHidden = false
+                switch type {
+                case .accountNumber:
+                    self.accountNumber = string
+                case .amount:
+                    self.amount = string
+                case .reference:
+                    self.reference = string
+                }
+                
+                self.previewView.alpha = 0
+                UIView.animate(withDuration: 0.5) {
+                    self.previewView.alpha = 1
+                }
             }
         }
     }
     
-    @IBAction func handleTap(_ sender: UITapGestureRecognizer) {
-        captureSessionQueue.async {
-            if !self.captureSession.isRunning {
-                self.captureSession.startRunning()
-            }
-            DispatchQueue.main.async {
-                self.numberView.isHidden = true
-            }
+    private func currentStringFor(type: CaptureType) -> String? {
+        switch type {
+        case .accountNumber:
+            return accountNumber
+        case .amount:
+            return amount
+        case .reference:
+            return reference
         }
+    }
+    
+    @IBAction func didTapReset() {
+        self.reference = nil
+        self.accountNumber = nil
+        self.amount = nil
     }
 }
 

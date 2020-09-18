@@ -29,7 +29,7 @@ class VisionViewController: ViewController {
 	
 	// Vision recognition handler.
 	func recognizeTextHandler(request: VNRequest, error: Error?) {
-		var numbers = [String]()
+        var values = [String.ExtractedInvoiceValue]()
 		var redBoxes = [CGRect]() // Shows all recognized text lines
 		var greenBoxes = [CGRect]() // Shows words that might be serials
 		
@@ -48,15 +48,17 @@ class VisionViewController: ViewController {
 			// number and a red box around the full string. If the number covers
 			// the full result only draw the green box.
 			var numberIsSubstring = true
-			
-			if let result = candidate.string.extractBankGiroNumber() {
-				let (range, number) = result
+            
+			if let result = candidate.string.extractInvoiceValue() {
+//				let (range, number) = result
 				// Number may not cover full visionResult. Extract bounding box
 				// of substring.
-				if let box = try? candidate.boundingBox(for: range)?.boundingBox {
-					numbers.append(number)
+                if let box = try? candidate.boundingBox(for: result.range)?.boundingBox, box.minX > 0.06 {
+                    print(box.minX)
+                    values.append(result)
 					greenBoxes.append(box)
-					numberIsSubstring = !(range.lowerBound == candidate.string.startIndex && range.upperBound == candidate.string.endIndex)
+                    numberIsSubstring = !(result.range.lowerBound == candidate.string.startIndex &&
+                                            result.range.upperBound == candidate.string.endIndex)
 				}
 			}
 			if numberIsSubstring {
@@ -65,13 +67,13 @@ class VisionViewController: ViewController {
 		}
 		
 		// Log any found numbers.
-		numberTracker.logFrame(strings: numbers)
+		numberTracker.logFrame(strings: values)
 		show(boxGroups: [(color: UIColor.red.cgColor, boxes: redBoxes), (color: UIColor.green.cgColor, boxes: greenBoxes)])
 		
 		// Check if we have any temporally stable numbers.
-		if let sureNumber = numberTracker.getStableString() {
-			showString(string: sureNumber)
-			numberTracker.reset(string: sureNumber)
+		if let sureExtractedValue = numberTracker.getStableString() {
+            showString(string: sureExtractedValue.value, type: sureExtractedValue.type)
+			numberTracker.reset(string: sureExtractedValue)
 		}
 	}
 	
