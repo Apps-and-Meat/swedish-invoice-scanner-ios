@@ -17,6 +17,7 @@ class ViewController: UIViewController {
     @IBOutlet weak var amountLabel: UILabel!
     @IBOutlet weak var accountNumberLabel: UILabel!
     
+    @IBOutlet weak var maskView: UIView!
     var reference: String? {
         didSet {
             referensLabel.text = String(reference?.split(separator: " ").first ?? "")
@@ -134,13 +135,14 @@ class ViewController: UIViewController {
         
         // Figure out size of ROI.
         let size: CGSize
-        if currentOrientation.isPortrait || currentOrientation == .unknown {
-            size = CGSize(width: min(desiredWidthRatio * bufferAspectRatio, maxPortraitWidth), height: desiredHeightRatio / bufferAspectRatio)
-        } else {
-            size = CGSize(width: desiredWidthRatio, height: desiredHeightRatio)
-        }
+//        if currentOrientation.isPortrait || currentOrientation == .unknown {
+        size = CGSize(width: Double(maskView.frame.width / previewView.frame.width), height: Double(maskView.frame.height / previewView.frame.height))
+//        } else {
+//            size = CGSize(width: desiredWidthRatio, height: desiredHeightRatio)
+//        }
         // Make it centered.
-        regionOfInterest.origin = CGPoint(x: (1 - size.width) / 2, y: (1 - size.height) / 2)
+        regionOfInterest.origin = CGPoint(x: maskView.frame.minX / (2 * previewView.frame.width),
+                                          y: (previewView.frame.height - maskView.frame.maxY) / (previewView.frame.height))
         regionOfInterest.size = size
         
         // ROI changed, update transform.

@@ -19,16 +19,28 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="dCx-30-dWq" customClass="PreviewView" customModule="AppMeatOCRScannerApp" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                                <rect key="frame" x="-45" y="0.0" width="504" height="896"/>
+                                <subviews>
+                                    <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gRz-LF-rP4">
+                                        <rect key="frame" x="85" y="184" width="334" height="205"/>
+                                        <color key="backgroundColor" systemColor="systemPinkColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="205" id="rkG-Zd-IOG"/>
+                                        </constraints>
+                                    </view>
+                                </subviews>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <color key="tintColor" systemColor="systemBlueColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="dCx-30-dWq" secondAttribute="height" multiplier="1080:1920" id="1am-Hc-4lT"/>
+                                </constraints>
                             </view>
                             <view opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4LZ-uG-TOw" userLabel="Cutout View">
                                 <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <gestureRecognizers/>
                             </view>
-                            <view contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bnr-H0-2NB">
+                            <view hidden="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bnr-H0-2NB">
                                 <rect key="frame" x="0.0" y="636" width="414" height="260"/>
                                 <subviews>
                                     <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="20" translatesAutoresizingMaskIntoConstraints="NO" id="1Lx-7Y-H0h">
@@ -138,16 +150,18 @@
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
+                            <constraint firstItem="gRz-LF-rP4" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="40" id="0DV-KR-sp1"/>
                             <constraint firstAttribute="trailing" secondItem="bnr-H0-2NB" secondAttribute="trailing" id="1nH-CX-uyi"/>
                             <constraint firstAttribute="trailing" secondItem="4LZ-uG-TOw" secondAttribute="trailing" id="34r-xM-zkS"/>
                             <constraint firstAttribute="bottom" secondItem="dCx-30-dWq" secondAttribute="bottom" id="AY4-8i-CYa"/>
-                            <constraint firstItem="dCx-30-dWq" firstAttribute="centerY" secondItem="8bC-Xf-vdC" secondAttribute="centerY" id="Hnz-aJ-uAm"/>
+                            <constraint firstItem="gRz-LF-rP4" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="140" id="QbA-j8-ifp"/>
                             <constraint firstItem="dCx-30-dWq" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="YR5-lB-gXO"/>
-                            <constraint firstAttribute="trailing" secondItem="dCx-30-dWq" secondAttribute="trailing" id="cZC-nJ-9CE"/>
                             <constraint firstAttribute="bottom" secondItem="bnr-H0-2NB" secondAttribute="bottom" id="d8G-V3-RJU"/>
                             <constraint firstItem="bnr-H0-2NB" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="dGc-xf-4Fz"/>
                             <constraint firstItem="4LZ-uG-TOw" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="en1-rS-BZm"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="gRz-LF-rP4" secondAttribute="trailing" constant="40" id="mIm-WF-ReN"/>
                             <constraint firstAttribute="bottom" secondItem="4LZ-uG-TOw" secondAttribute="bottom" id="nGI-eX-p4U"/>
+                            <constraint firstItem="dCx-30-dWq" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="top" id="wRu-UO-doe"/>
                             <constraint firstItem="4LZ-uG-TOw" firstAttribute="centerY" secondItem="8bC-Xf-vdC" secondAttribute="centerY" id="zr2-bi-Zte"/>
                         </constraints>
                     </view>
@@ -155,6 +169,7 @@
                         <outlet property="accountNumberLabel" destination="Zwu-1Q-GpK" id="2eJ-9d-sZa"/>
                         <outlet property="amountLabel" destination="Sez-fm-gg9" id="59C-6u-uVS"/>
                         <outlet property="cutoutView" destination="4LZ-uG-TOw" id="rJr-eM-iF8"/>
+                        <outlet property="maskView" destination="gRz-LF-rP4" id="Nfh-LR-0P6"/>
                         <outlet property="previewView" destination="dCx-30-dWq" id="2Ow-bh-HUR"/>
                         <outlet property="referensLabel" destination="3Ur-9U-bk3" id="n5E-iI-jni"/>
                     </connections>
@@ -177,6 +192,9 @@
         </systemColor>
         <systemColor name="systemBlueColor">
             <color red="0.0" green="0.47843137254901963" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemPinkColor">
+            <color red="1" green="0.17647058823529413" blue="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>
