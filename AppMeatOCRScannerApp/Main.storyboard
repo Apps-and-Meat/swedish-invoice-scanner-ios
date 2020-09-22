@@ -16,31 +16,27 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="dCx-30-dWq" customClass="PreviewView" customModule="AppMeatOCRScannerApp" customModuleProvider="target">
-                                <rect key="frame" x="-45" y="0.0" width="504" height="896"/>
+                            <view opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4LZ-uG-TOw" userLabel="Cutout View" customClass="CutOutView" customModule="AppMeatOCRScannerApp" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                                 <subviews>
-                                    <view opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4LZ-uG-TOw" userLabel="Cutout View">
-                                        <rect key="frame" x="0.0" y="0.0" width="504" height="896"/>
-                                        <color key="backgroundColor" white="0.0" alpha="0.5" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        <gestureRecognizers/>
-                                    </view>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gRz-LF-rP4" customClass="MaskView" customModule="AppMeatOCRScannerApp" customModuleProvider="target">
-                                        <rect key="frame" x="85" y="184" width="334" height="205"/>
+                                        <rect key="frame" x="48" y="212" width="318" height="205"/>
                                         <color key="backgroundColor" systemColor="systemPinkColor"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="205" id="rkG-Zd-IOG"/>
                                         </constraints>
                                     </view>
                                 </subviews>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <color key="tintColor" systemColor="systemBlueColor"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.5" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <gestureRecognizers/>
                                 <constraints>
-                                    <constraint firstAttribute="width" secondItem="dCx-30-dWq" secondAttribute="height" multiplier="1080:1920" id="1am-Hc-4lT"/>
-                                    <constraint firstItem="4LZ-uG-TOw" firstAttribute="leading" secondItem="dCx-30-dWq" secondAttribute="leading" id="OnT-Do-nh3"/>
-                                    <constraint firstItem="4LZ-uG-TOw" firstAttribute="top" secondItem="dCx-30-dWq" secondAttribute="top" id="SoE-8i-mPf"/>
-                                    <constraint firstAttribute="bottom" secondItem="4LZ-uG-TOw" secondAttribute="bottom" id="WhG-Mf-Vk4"/>
-                                    <constraint firstAttribute="trailing" secondItem="4LZ-uG-TOw" secondAttribute="trailing" id="dXK-s5-2fA"/>
+                                    <constraint firstItem="gRz-LF-rP4" firstAttribute="top" secondItem="4LZ-uG-TOw" secondAttribute="topMargin" constant="160" id="blF-RA-Hqn"/>
+                                    <constraint firstAttribute="trailingMargin" secondItem="gRz-LF-rP4" secondAttribute="trailing" constant="40" id="hgc-Y8-L0r"/>
+                                    <constraint firstItem="gRz-LF-rP4" firstAttribute="leading" secondItem="4LZ-uG-TOw" secondAttribute="leadingMargin" constant="40" id="te9-SO-Hfj"/>
                                 </constraints>
+                                <connections>
+                                    <outlet property="holeView" destination="gRz-LF-rP4" id="fDZ-8M-AU3"/>
+                                </connections>
                             </view>
                             <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" translatesAutoresizingMaskIntoConstraints="NO" id="i3p-VG-2wQ">
                                 <rect key="frame" x="20" y="792" width="374" height="50"/>
@@ -49,6 +45,9 @@
                                         <rect key="frame" x="0.0" y="0.0" width="187" height="50"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <state key="normal" title="Avbryt"/>
+                                        <connections>
+                                            <action selector="didTapReset" destination="BYZ-38-t0r" eventType="touchUpInside" id="VRY-vr-MsE"/>
+                                        </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5Q0-aC-AFm">
                                         <rect key="frame" x="187" y="0.0" width="187" height="50"/>
@@ -155,24 +154,20 @@
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstItem="gRz-LF-rP4" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="40" id="0DV-KR-sp1"/>
                             <constraint firstAttribute="trailing" secondItem="bnr-H0-2NB" secondAttribute="trailing" constant="20" id="1nH-CX-uyi"/>
                             <constraint firstItem="i3p-VG-2wQ" firstAttribute="top" secondItem="bnr-H0-2NB" secondAttribute="bottom" constant="20" id="9gW-5d-7TI"/>
-                            <constraint firstAttribute="bottom" secondItem="dCx-30-dWq" secondAttribute="bottom" id="AY4-8i-CYa"/>
+                            <constraint firstAttribute="trailing" secondItem="4LZ-uG-TOw" secondAttribute="trailing" id="C9z-Rc-GFJ"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="i3p-VG-2wQ" secondAttribute="bottom" constant="20" id="GVc-QI-opT"/>
+                            <constraint firstItem="4LZ-uG-TOw" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="Ko9-2b-DlW"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="i3p-VG-2wQ" secondAttribute="trailing" constant="20" id="LGD-P7-FtD"/>
-                            <constraint firstItem="gRz-LF-rP4" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="140" id="QbA-j8-ifp"/>
-                            <constraint firstItem="dCx-30-dWq" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="YR5-lB-gXO"/>
                             <constraint firstItem="bnr-H0-2NB" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" constant="20" id="dGc-xf-4Fz"/>
+                            <constraint firstItem="4LZ-uG-TOw" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="top" id="euV-C5-dFy"/>
+                            <constraint firstAttribute="bottom" secondItem="4LZ-uG-TOw" secondAttribute="bottom" id="f5u-rL-MOk"/>
                             <constraint firstItem="i3p-VG-2wQ" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="20" id="htW-RA-tfH"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="gRz-LF-rP4" secondAttribute="trailing" constant="40" id="mIm-WF-ReN"/>
-                            <constraint firstItem="dCx-30-dWq" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="top" id="wRu-UO-doe"/>
                         </constraints>
                     </view>
                     <connections>
                         <outlet property="cutoutView" destination="4LZ-uG-TOw" id="rJr-eM-iF8"/>
-                        <outlet property="maskView" destination="gRz-LF-rP4" id="Nfh-LR-0P6"/>
-                        <outlet property="previewView" destination="dCx-30-dWq" id="2Ow-bh-HUR"/>
                         <outlet property="resultsView" destination="bnr-H0-2NB" id="ddb-0X-8eL"/>
                     </connections>
                 </viewController>

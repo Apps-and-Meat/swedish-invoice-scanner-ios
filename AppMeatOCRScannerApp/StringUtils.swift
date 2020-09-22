@@ -85,10 +85,6 @@ extension String {
 
         let phoneNumberDigits = String(self[range])
         
-        // Must be exactly 10 digits.
-        guard phoneNumberDigits.count > 11, phoneNumberDigits.count < 13 else {
-            return nil
-        }
         
         // Substitute commonly misrecognized characters, for example: 'S' -> '5' or 'l' -> '1'
         var result = ""

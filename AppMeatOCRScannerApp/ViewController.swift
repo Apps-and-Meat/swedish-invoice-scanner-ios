@@ -48,13 +48,54 @@ class MaskView: UIView {
     }
 }
 
+class CutOutView: UIView {
+    @IBOutlet var holeView: UIView! {
+        didSet {
+            holeView.backgroundColor = .clear
+            holeView.layer.cornerRadius = 8
+            holeView.layer.borderWidth = 3
+            holeView.layer.borderColor = UIColor.white.cgColor
+        }
+    }
+
+    let maskLayer: CAShapeLayer = {
+        let mask = CAShapeLayer()
+        mask.backgroundColor = UIColor.clear.cgColor
+        mask.fillRule = .evenOdd
+        return mask
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+
+    func setup() {
+        self.layer.mask = maskLayer
+    }
+
+    override func draw(_ rect: CGRect) {
+        super.draw(rect)
+
+        let path = UIBezierPath(rect: rect)
+        path.append(UIBezierPath(roundedRect: holeView.frame.inset(by: .init(top: 2, left: 2, bottom: 2, right: 2)), cornerRadius: 8))
+        maskLayer.path = path.cgPath
+    }
+}
+
 class ViewController: UIViewController {
     // MARK: - UI objects
-    @IBOutlet weak var previewView: PreviewView!
-    @IBOutlet weak var cutoutView: UIView!
+    @IBOutlet weak var cutoutView: CutOutView!
     @IBOutlet weak var resultsView: InvoiceResultsView?
-    
-    @IBOutlet weak var maskView: UIView!
+
+    var cameraView = PreviewView()
+
+//    @IBOutlet weak var maskView: UIView!
     var reference: String? {
         didSet {
             resultsView?.referensLabel.text = String(reference?.split(separator: " ").first ?? "")
@@ -73,7 +114,7 @@ class ViewController: UIViewController {
         }
     }
     
-    var maskLayer = CAShapeLayer()
+//    var maskLayer = CAShapeLayer()
     // Device orientation. Updated whenever the orientation changes to a
     // different supported orientation.
     var currentOrientation = UIDeviceOrientation.portrait
@@ -107,18 +148,56 @@ class ViewController: UIViewController {
     var visionToAVFTransform = CGAffineTransform.identity
     
     // MARK: - View controller methods
-    
+
+    private func setupCameraView() {
+        cameraView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(cameraView)
+        view.sendSubviewToBack(cameraView)
+
+        view.addConstraint(.init(item: cameraView,
+                                 attribute: .height,
+                                 relatedBy: .equal,
+                                 toItem: cameraView,
+                                 attribute: .width,
+                                 multiplier: 1920 / 1080,
+                                 constant: 0))
+
+        view.addConstraint(.init(item: cameraView,
+                                 attribute: .centerX,
+                                 relatedBy: .equal,
+                                 toItem: view,
+                                 attribute: .centerX,
+                                 multiplier: 1,
+                                 constant: 0))
+
+        view.addConstraint(.init(item: cameraView,
+                                 attribute: .top,
+                                 relatedBy: .equal,
+                                 toItem: view,
+                                 attribute: .top,
+                                 multiplier: 1,
+                                 constant: 0))
+
+        view.addConstraint(.init(item: cameraView,
+                                 attribute: .bottom,
+                                 relatedBy: .equal,
+                                 toItem: view,
+                                 attribute: .bottom,
+                                 multiplier: 1,
+                                 constant: 0))
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        setupCameraView()
         
         // Set up preview view.
-        previewView.session = captureSession
-        
-        // Set up cutout view.
-//        cutoutView.backgroundColor = UIColor.gray.withAlphaComponent(0.5)
-        maskLayer.backgroundColor = UIColor.clear.cgColor
-        maskLayer.fillRule = .evenOdd
-        cutoutView.layer.mask = maskLayer
+        cameraView.session = captureSession
+
+//        maskLayer.backgroundColor = UIColor.clear.cgColor
+//        maskLayer.fillRule = .evenOdd
+//        cutoutView.layer.mask = maskLayer
         
         // Starting the capture session is a blocking call. Perform setup using
         // a dedicated serial dispatch queue to prevent blocking the main thread.
@@ -138,10 +217,12 @@ class ViewController: UIViewController {
     
     func calculateRegionOfInterest() {
 
-        let width = Double(maskView.frame.width / previewView.frame.width)
-        let height = Double(maskView.frame.height / previewView.frame.height)
-        let x = (previewView.frame.width - maskView.frame.maxX) / (previewView.frame.width)
-        let y = (previewView.frame.height - maskView.frame.maxY) / (previewView.frame.height)
+        let scanRect = cutoutView.convert(cutoutView.holeView.frame, to: cameraView)
+
+        let width = Double(scanRect.width / cameraView.frame.width)
+        let height = Double(scanRect.height / cameraView.frame.height)
+        let x = (cameraView.frame.width - scanRect.maxX) / (cameraView.frame.width)
+        let y = (cameraView.frame.height - scanRect.maxY) / (cameraView.frame.height)
 
         regionOfInterest.origin = CGPoint(x: x, y: y)
         regionOfInterest.size = CGSize(width: width, height: height)
@@ -149,9 +230,9 @@ class ViewController: UIViewController {
     }
     
     func updateCutout() {
-        let path = UIBezierPath(rect: cutoutView.frame)
-        path.append(UIBezierPath(roundedRect: maskView.frame, cornerRadius: 8))
-        maskLayer.path = path.cgPath
+//        let path = UIBezierPath(rect: cutoutView.frame)
+//        path.append(UIBezierPath(roundedRect: maskView.frame, cornerRadius: 8))
+//        maskLayer.path = path.cgPath
     }
     
     func setupOrientationAndTransform() {
@@ -245,9 +326,9 @@ class ViewController: UIViewController {
                     self.reference = string
                 }
                 
-                self.previewView.alpha = 0
+                self.cameraView.alpha = 0
                 UIView.animate(withDuration: 0.5) {
-                    self.previewView.alpha = 1
+                    self.cameraView.alpha = 1
                 }
             }
         }

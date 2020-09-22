@@ -107,7 +107,7 @@ class VisionViewController: ViewController {
 		layer.borderWidth = 1
 		layer.frame = rect
 		boxLayer.append(layer)
-		previewView.videoPreviewLayer.insertSublayer(layer, at: 1)
+        cameraView.videoPreviewLayer.insertSublayer(layer, at: 1)
 	}
 	
 	// Remove all drawn boxes. Must be called on main queue.
@@ -123,7 +123,7 @@ class VisionViewController: ViewController {
 	// Draws groups of colored boxes.
 	func show(boxGroups: [ColoredBoxGroup]) {
 		DispatchQueue.main.async {
-			let layer = self.previewView.videoPreviewLayer
+			let layer = self.cameraView.videoPreviewLayer
 			self.removeBoxes()
 			for boxGroup in boxGroups {
 				let color = boxGroup.color
