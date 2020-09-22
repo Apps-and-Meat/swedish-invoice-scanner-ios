@@ -9,30 +9,67 @@ import UIKit
 import AVFoundation
 import Vision
 
+class InvoiceResultsView: UIView {
+    @IBOutlet weak var referensLabel: UILabel!
+    @IBOutlet weak var amountLabel: UILabel!
+    @IBOutlet weak var accountNumberLabel: UILabel!
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+
+    private func setup() {
+        layer.cornerRadius = 8
+    }
+}
+
+class MaskView: UIView {
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+
+    private func setup() {
+        backgroundColor = .clear
+        layer.cornerRadius = 8
+        layer.borderWidth = 2
+        layer.borderColor = UIColor.white.cgColor
+    }
+}
+
 class ViewController: UIViewController {
     // MARK: - UI objects
     @IBOutlet weak var previewView: PreviewView!
     @IBOutlet weak var cutoutView: UIView!
-    @IBOutlet weak var referensLabel: UILabel!
-    @IBOutlet weak var amountLabel: UILabel!
-    @IBOutlet weak var accountNumberLabel: UILabel!
+    @IBOutlet weak var resultsView: InvoiceResultsView?
     
     @IBOutlet weak var maskView: UIView!
     var reference: String? {
         didSet {
-            referensLabel.text = String(reference?.split(separator: " ").first ?? "")
+            resultsView?.referensLabel.text = String(reference?.split(separator: " ").first ?? "")
         }
     }
     
     var amount: String? {
         didSet {
-            amountLabel.text = amount?.replacingOccurrences(of: " ", with: ",")
+            resultsView?.amountLabel.text = amount?.replacingOccurrences(of: " ", with: ",")
         }
     }
     
     var accountNumber: String? {
         didSet {
-            accountNumberLabel.text = String(accountNumber?.split(separator: "#").first ?? "")
+            resultsView?.accountNumberLabel.text = String(accountNumber?.split(separator: "#").first ?? "")
         }
     }
     
@@ -78,7 +115,7 @@ class ViewController: UIViewController {
         previewView.session = captureSession
         
         // Set up cutout view.
-        cutoutView.backgroundColor = UIColor.gray.withAlphaComponent(0.5)
+//        cutoutView.backgroundColor = UIColor.gray.withAlphaComponent(0.5)
         maskLayer.backgroundColor = UIColor.clear.cgColor
         maskLayer.fillRule = .evenOdd
         cutoutView.layer.mask = maskLayer
@@ -92,34 +129,9 @@ class ViewController: UIViewController {
             DispatchQueue.main.async {
                 // Figure out initial ROI.
                 self.calculateRegionOfInterest()
+                self.updateCutout()
             }
         }
-    }
-    
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-
-        // Only change the current orientation if the new one is landscape or
-        // portrait. You can't really do anything about flat or unknown.
-        let deviceOrientation = UIDevice.current.orientation
-        if deviceOrientation.isPortrait || deviceOrientation.isLandscape {
-            currentOrientation = deviceOrientation
-        }
-        
-        // Handle device orientation in the preview layer.
-        if let videoPreviewLayerConnection = previewView.videoPreviewLayer.connection {
-            if let newVideoOrientation = AVCaptureVideoOrientation(deviceOrientation: deviceOrientation) {
-                videoPreviewLayerConnection.videoOrientation = newVideoOrientation
-            }
-        }
-        
-        // Orientation changed: figure out new region of interest (ROI).
-        calculateRegionOfInterest()
-    }
-    
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        updateCutout()
     }
     
     // MARK: - Setup
@@ -128,63 +140,31 @@ class ViewController: UIViewController {
 
         let width = Double(maskView.frame.width / previewView.frame.width)
         let height = Double(maskView.frame.height / previewView.frame.height)
-        print(maskView.frame.minX)
         let x = (previewView.frame.width - maskView.frame.maxX) / (previewView.frame.width)
         let y = (previewView.frame.height - maskView.frame.maxY) / (previewView.frame.height)
 
         regionOfInterest.origin = CGPoint(x: x, y: y)
         regionOfInterest.size = CGSize(width: width, height: height)
-        
-        // ROI changed, update transform.
         setupOrientationAndTransform()
-        
-        // Update the cutout to match the new ROI.
-        DispatchQueue.main.async {
-            // Wait for the next run cycle before updating the cutout. This
-            // ensures that the preview layer already has its new orientation.
-            self.updateCutout()
-        }
     }
     
     func updateCutout() {
-        // Figure out where the cutout ends up in layer coordinates.
-        let roiRectTransform = bottomToTopTransform.concatenating(uiRotationTransform)
-        let cutout = previewView.videoPreviewLayer.layerRectConverted(fromMetadataOutputRect: regionOfInterest.applying(roiRectTransform))
-        
-        // Create the mask.
         let path = UIBezierPath(rect: cutoutView.frame)
-        path.append(UIBezierPath(rect: cutout))
+        path.append(UIBezierPath(roundedRect: maskView.frame, cornerRadius: 8))
         maskLayer.path = path.cgPath
-        
-        // Move the number view down to under cutout.
-        var numFrame = cutout
-        numFrame.origin.y += numFrame.size.height
-        referensLabel.frame = numFrame
     }
     
     func setupOrientationAndTransform() {
         // Recalculate the affine transform between Vision coordinates and AVF coordinates.
-        
+
         // Compensate for region of interest.
         let roi = regionOfInterest
         roiToGlobalTransform = CGAffineTransform(translationX: roi.origin.x, y: roi.origin.y).scaledBy(x: roi.width, y: roi.height)
-        
+
         // Compensate for orientation (buffers always come in the same orientation).
-        switch currentOrientation {
-        case .landscapeLeft:
-            textOrientation = CGImagePropertyOrientation.up
-            uiRotationTransform = CGAffineTransform.identity
-        case .landscapeRight:
-            textOrientation = CGImagePropertyOrientation.down
-            uiRotationTransform = CGAffineTransform(translationX: 1, y: 1).rotated(by: CGFloat.pi)
-        case .portraitUpsideDown:
-            textOrientation = CGImagePropertyOrientation.left
-            uiRotationTransform = CGAffineTransform(translationX: 1, y: 0).rotated(by: CGFloat.pi / 2)
-        default: // We default everything else to .portraitUp
-            textOrientation = CGImagePropertyOrientation.right
-            uiRotationTransform = CGAffineTransform(translationX: 0, y: 1).rotated(by: -CGFloat.pi / 2)
-        }
-        
+        textOrientation = CGImagePropertyOrientation.right
+        uiRotationTransform = CGAffineTransform(translationX: 0, y: 1).rotated(by: -CGFloat.pi / 2)
+
         // Full Vision ROI to AVF transform.
         visionToAVFTransform = roiToGlobalTransform.concatenating(bottomToTopTransform).concatenating(uiRotationTransform)
     }
@@ -222,13 +202,6 @@ class ViewController: UIViewController {
         videoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange]
         if captureSession.canAddOutput(videoDataOutput) {
             captureSession.addOutput(videoDataOutput)
-            // NOTE:
-            // There is a trade-off to be made here. Enabling stabilization will
-            // give temporally more stable results and should help the recognizer
-            // converge. But if it's enabled the VideoDataOutput buffers don't
-            // match what's displayed on screen, which makes drawing bounding
-            // boxes very hard. Disable it in this app to allow drawing detected
-            // bounding boxes on screen.
             videoDataOutput.connection(with: AVMediaType.video)?.preferredVideoStabilizationMode = .off
         } else {
             print("Could not add VDO output")
@@ -238,7 +211,7 @@ class ViewController: UIViewController {
         // Set zoom and autofocus to help focus on very small text.
         do {
             try captureDevice.lockForConfiguration()
-            captureDevice.videoZoomFactor = 2
+            captureDevice.videoZoomFactor = 1
             captureDevice.autoFocusRangeRestriction = .near
             captureDevice.unlockForConfiguration()
         } catch {
@@ -304,19 +277,5 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         // This is implemented in VisionViewController.
-    }
-}
-
-// MARK: - Utility extensions
-
-extension AVCaptureVideoOrientation {
-    init?(deviceOrientation: UIDeviceOrientation) {
-        switch deviceOrientation {
-        case .portrait: self = .portrait
-        case .portraitUpsideDown: self = .portraitUpsideDown
-        case .landscapeLeft: self = .landscapeRight
-        case .landscapeRight: self = .landscapeLeft
-        default: return nil
-        }
     }
 }
