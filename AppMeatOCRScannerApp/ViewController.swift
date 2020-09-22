@@ -125,25 +125,15 @@ class ViewController: UIViewController {
     // MARK: - Setup
     
     func calculateRegionOfInterest() {
-        // In landscape orientation the desired ROI is specified as the ratio of
-        // buffer width to height. When the UI is rotated to portrait, keep the
-        // vertical size the same (in buffer pixels). Also try to keep the
-        // horizontal size the same up to a maximum ratio.
-        let desiredHeightRatio = 0.15
-        let desiredWidthRatio = 0.6
-        let maxPortraitWidth = 0.8
-        
-        // Figure out size of ROI.
-        let size: CGSize
-//        if currentOrientation.isPortrait || currentOrientation == .unknown {
-        size = CGSize(width: Double(maskView.frame.width / previewView.frame.width), height: Double(maskView.frame.height / previewView.frame.height))
-//        } else {
-//            size = CGSize(width: desiredWidthRatio, height: desiredHeightRatio)
-//        }
-        // Make it centered.
-        regionOfInterest.origin = CGPoint(x: maskView.frame.minX / (2 * previewView.frame.width),
-                                          y: (previewView.frame.height - maskView.frame.maxY) / (previewView.frame.height))
-        regionOfInterest.size = size
+
+        let width = Double(maskView.frame.width / previewView.frame.width)
+        let height = Double(maskView.frame.height / previewView.frame.height)
+        print(maskView.frame.minX)
+        let x = (previewView.frame.width - maskView.frame.maxX) / (previewView.frame.width)
+        let y = (previewView.frame.height - maskView.frame.maxY) / (previewView.frame.height)
+
+        regionOfInterest.origin = CGPoint(x: x, y: y)
+        regionOfInterest.size = CGSize(width: width, height: height)
         
         // ROI changed, update transform.
         setupOrientationAndTransform()

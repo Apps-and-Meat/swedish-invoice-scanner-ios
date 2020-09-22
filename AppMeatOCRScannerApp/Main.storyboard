@@ -21,6 +21,11 @@
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="dCx-30-dWq" customClass="PreviewView" customModule="AppMeatOCRScannerApp" customModuleProvider="target">
                                 <rect key="frame" x="-45" y="0.0" width="504" height="896"/>
                                 <subviews>
+                                    <view opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4LZ-uG-TOw" userLabel="Cutout View">
+                                        <rect key="frame" x="0.0" y="0.0" width="504" height="896"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <gestureRecognizers/>
+                                    </view>
                                     <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gRz-LF-rP4">
                                         <rect key="frame" x="85" y="184" width="334" height="205"/>
                                         <color key="backgroundColor" systemColor="systemPinkColor"/>
@@ -33,12 +38,11 @@
                                 <color key="tintColor" systemColor="systemBlueColor"/>
                                 <constraints>
                                     <constraint firstAttribute="width" secondItem="dCx-30-dWq" secondAttribute="height" multiplier="1080:1920" id="1am-Hc-4lT"/>
+                                    <constraint firstItem="4LZ-uG-TOw" firstAttribute="leading" secondItem="dCx-30-dWq" secondAttribute="leading" id="OnT-Do-nh3"/>
+                                    <constraint firstItem="4LZ-uG-TOw" firstAttribute="top" secondItem="dCx-30-dWq" secondAttribute="top" id="SoE-8i-mPf"/>
+                                    <constraint firstAttribute="bottom" secondItem="4LZ-uG-TOw" secondAttribute="bottom" id="WhG-Mf-Vk4"/>
+                                    <constraint firstAttribute="trailing" secondItem="4LZ-uG-TOw" secondAttribute="trailing" id="dXK-s5-2fA"/>
                                 </constraints>
-                            </view>
-                            <view opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4LZ-uG-TOw" userLabel="Cutout View">
-                                <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
-                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <gestureRecognizers/>
                             </view>
                             <view hidden="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bnr-H0-2NB">
                                 <rect key="frame" x="0.0" y="636" width="414" height="260"/>
@@ -152,17 +156,13 @@
                         <constraints>
                             <constraint firstItem="gRz-LF-rP4" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="40" id="0DV-KR-sp1"/>
                             <constraint firstAttribute="trailing" secondItem="bnr-H0-2NB" secondAttribute="trailing" id="1nH-CX-uyi"/>
-                            <constraint firstAttribute="trailing" secondItem="4LZ-uG-TOw" secondAttribute="trailing" id="34r-xM-zkS"/>
                             <constraint firstAttribute="bottom" secondItem="dCx-30-dWq" secondAttribute="bottom" id="AY4-8i-CYa"/>
                             <constraint firstItem="gRz-LF-rP4" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="140" id="QbA-j8-ifp"/>
                             <constraint firstItem="dCx-30-dWq" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="YR5-lB-gXO"/>
                             <constraint firstAttribute="bottom" secondItem="bnr-H0-2NB" secondAttribute="bottom" id="d8G-V3-RJU"/>
                             <constraint firstItem="bnr-H0-2NB" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="dGc-xf-4Fz"/>
-                            <constraint firstItem="4LZ-uG-TOw" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="en1-rS-BZm"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="gRz-LF-rP4" secondAttribute="trailing" constant="40" id="mIm-WF-ReN"/>
-                            <constraint firstAttribute="bottom" secondItem="4LZ-uG-TOw" secondAttribute="bottom" id="nGI-eX-p4U"/>
                             <constraint firstItem="dCx-30-dWq" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="top" id="wRu-UO-doe"/>
-                            <constraint firstItem="4LZ-uG-TOw" firstAttribute="centerY" secondItem="8bC-Xf-vdC" secondAttribute="centerY" id="zr2-bi-Zte"/>
                         </constraints>
                     </view>
                     <connections>
