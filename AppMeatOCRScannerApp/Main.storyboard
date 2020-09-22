@@ -16,28 +16,6 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <view opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4LZ-uG-TOw" userLabel="Cutout View" customClass="CutOutView" customModule="AppMeatOCRScannerApp" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
-                                <subviews>
-                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gRz-LF-rP4" customClass="MaskView" customModule="AppMeatOCRScannerApp" customModuleProvider="target">
-                                        <rect key="frame" x="48" y="212" width="318" height="205"/>
-                                        <color key="backgroundColor" systemColor="systemPinkColor"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="205" id="rkG-Zd-IOG"/>
-                                        </constraints>
-                                    </view>
-                                </subviews>
-                                <color key="backgroundColor" white="0.0" alpha="0.5" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <gestureRecognizers/>
-                                <constraints>
-                                    <constraint firstItem="gRz-LF-rP4" firstAttribute="top" secondItem="4LZ-uG-TOw" secondAttribute="topMargin" constant="160" id="blF-RA-Hqn"/>
-                                    <constraint firstAttribute="trailingMargin" secondItem="gRz-LF-rP4" secondAttribute="trailing" constant="40" id="hgc-Y8-L0r"/>
-                                    <constraint firstItem="gRz-LF-rP4" firstAttribute="leading" secondItem="4LZ-uG-TOw" secondAttribute="leadingMargin" constant="40" id="te9-SO-Hfj"/>
-                                </constraints>
-                                <connections>
-                                    <outlet property="holeView" destination="gRz-LF-rP4" id="fDZ-8M-AU3"/>
-                                </connections>
-                            </view>
                             <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" translatesAutoresizingMaskIntoConstraints="NO" id="i3p-VG-2wQ">
                                 <rect key="frame" x="20" y="792" width="374" height="50"/>
                                 <subviews>
@@ -61,6 +39,13 @@
                                     <constraint firstAttribute="height" constant="50" id="DoB-kw-9GT"/>
                                 </constraints>
                             </stackView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gRz-LF-rP4" customClass="MaskView" customModule="AppMeatOCRScannerApp" customModuleProvider="target">
+                                <rect key="frame" x="40" y="204" width="334" height="205"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="205" id="rkG-Zd-IOG"/>
+                                </constraints>
+                            </view>
                             <view contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bnr-H0-2NB" customClass="InvoiceResultsView" customModule="AppMeatOCRScannerApp" customModuleProvider="target">
                                 <rect key="frame" x="20" y="512" width="374" height="260"/>
                                 <subviews>
@@ -152,22 +137,26 @@
                             </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
-                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" white="0.66666666666666663" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
                             <constraint firstAttribute="trailing" secondItem="bnr-H0-2NB" secondAttribute="trailing" constant="20" id="1nH-CX-uyi"/>
                             <constraint firstItem="i3p-VG-2wQ" firstAttribute="top" secondItem="bnr-H0-2NB" secondAttribute="bottom" constant="20" id="9gW-5d-7TI"/>
-                            <constraint firstAttribute="trailing" secondItem="4LZ-uG-TOw" secondAttribute="trailing" id="C9z-Rc-GFJ"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="i3p-VG-2wQ" secondAttribute="bottom" constant="20" id="GVc-QI-opT"/>
-                            <constraint firstItem="4LZ-uG-TOw" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="Ko9-2b-DlW"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="i3p-VG-2wQ" secondAttribute="trailing" constant="20" id="LGD-P7-FtD"/>
                             <constraint firstItem="bnr-H0-2NB" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" constant="20" id="dGc-xf-4Fz"/>
-                            <constraint firstItem="4LZ-uG-TOw" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="top" id="euV-C5-dFy"/>
-                            <constraint firstAttribute="bottom" secondItem="4LZ-uG-TOw" secondAttribute="bottom" id="f5u-rL-MOk"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="gRz-LF-rP4" secondAttribute="trailing" constant="40" id="f6C-LZ-Tyo"/>
+                            <constraint firstItem="gRz-LF-rP4" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="160" id="gaq-SW-6j7"/>
                             <constraint firstItem="i3p-VG-2wQ" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="20" id="htW-RA-tfH"/>
+                            <constraint firstItem="gRz-LF-rP4" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="40" id="ybm-MJ-NQi"/>
                         </constraints>
                     </view>
+                    <userDefinedRuntimeAttributes>
+                        <userDefinedRuntimeAttribute type="color" keyPath="overlayColor">
+                            <color key="value" white="0.0" alpha="0.5" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        </userDefinedRuntimeAttribute>
+                    </userDefinedRuntimeAttributes>
                     <connections>
-                        <outlet property="cutoutView" destination="4LZ-uG-TOw" id="rJr-eM-iF8"/>
+                        <outlet property="cameraWindowView" destination="gRz-LF-rP4" id="31l-BO-v2f"/>
                         <outlet property="resultsView" destination="bnr-H0-2NB" id="ddb-0X-8eL"/>
                     </connections>
                 </viewController>
@@ -185,9 +174,6 @@
         </systemColor>
         <systemColor name="systemBlueColor">
             <color red="0.0" green="0.47843137254901963" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </systemColor>
-        <systemColor name="systemPinkColor">
-            <color red="1" green="0.17647058823529413" blue="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

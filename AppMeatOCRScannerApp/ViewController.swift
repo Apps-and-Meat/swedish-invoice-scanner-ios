@@ -48,54 +48,57 @@ class MaskView: UIView {
     }
 }
 
-class CutOutView: UIView {
-    @IBOutlet var holeView: UIView! {
-        didSet {
-            holeView.backgroundColor = .clear
-            holeView.layer.cornerRadius = 8
-            holeView.layer.borderWidth = 3
-            holeView.layer.borderColor = UIColor.white.cgColor
+extension ViewController {
+    
+    class OverlayView: UIView {
+
+        let maskLayer: CAShapeLayer = {
+            let mask = CAShapeLayer()
+            mask.backgroundColor = UIColor.clear.cgColor
+            mask.fillRule = .evenOdd
+            return mask
+        }()
+
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            setup()
         }
-    }
 
-    let maskLayer: CAShapeLayer = {
-        let mask = CAShapeLayer()
-        mask.backgroundColor = UIColor.clear.cgColor
-        mask.fillRule = .evenOdd
-        return mask
-    }()
+        required init?(coder: NSCoder) {
+            super.init(coder: coder)
+            setup()
+        }
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setup()
-    }
+        func setup() {
 
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setup()
-    }
+        }
 
-    func setup() {
-        self.layer.mask = maskLayer
-    }
-
-    override func draw(_ rect: CGRect) {
-        super.draw(rect)
-
-        let path = UIBezierPath(rect: rect)
-        path.append(UIBezierPath(roundedRect: holeView.frame.inset(by: .init(top: 2, left: 2, bottom: 2, right: 2)), cornerRadius: 8))
-        maskLayer.path = path.cgPath
+        func setMaskedWindow(rect: CGRect) {
+            layer.mask = maskLayer
+            maskLayer.path = UIBezierPath(rect: rect).cgPath
+            let path = UIBezierPath(rect: self.frame)
+            path.append(UIBezierPath(roundedRect: rect, cornerRadius: 8))
+            maskLayer.path = path.cgPath
+        }
     }
 }
 
+
+
 class ViewController: UIViewController {
+
     // MARK: - UI objects
-    @IBOutlet weak var cutoutView: CutOutView!
     @IBOutlet weak var resultsView: InvoiceResultsView?
+    @IBOutlet weak var cameraWindowView: MaskView!
+
+    @IBInspectable var overlayColor: UIColor? {
+        get { overlayView.backgroundColor }
+        set { overlayView.backgroundColor = newValue }
+    }
 
     var cameraView = PreviewView()
+    var overlayView = OverlayView()
 
-//    @IBOutlet weak var maskView: UIView!
     var reference: String? {
         didSet {
             resultsView?.referensLabel.text = String(reference?.split(separator: " ").first ?? "")
@@ -187,10 +190,50 @@ class ViewController: UIViewController {
                                  constant: 0))
     }
 
+    private func setupOverlayView() {
+        overlayView.translatesAutoresizingMaskIntoConstraints = false
+        view.insertSubview(overlayView, aboveSubview: cameraView)
+
+        view.addConstraint(.init(item: overlayView,
+                                 attribute: .left,
+                                 relatedBy: .equal,
+                                 toItem: view,
+                                 attribute: .left,
+                                 multiplier: 1,
+                                 constant: 0))
+
+        view.addConstraint(.init(item: overlayView,
+                                 attribute: .trailing,
+                                 relatedBy: .equal,
+                                 toItem: view,
+                                 attribute: .trailing,
+                                 multiplier: 1,
+                                 constant: 0))
+
+        view.addConstraint(.init(item: overlayView,
+                                 attribute: .top,
+                                 relatedBy: .equal,
+                                 toItem: view,
+                                 attribute: .top,
+                                 multiplier: 1,
+                                 constant: 0))
+
+        view.addConstraint(.init(item: overlayView,
+                                 attribute: .bottom,
+                                 relatedBy: .equal,
+                                 toItem: view,
+                                 attribute: .bottom,
+                                 multiplier: 1,
+                                 constant: 0))
+    }
+
+
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
         setupCameraView()
+        setupOverlayView()
         
         // Set up preview view.
         cameraView.session = captureSession
@@ -217,7 +260,7 @@ class ViewController: UIViewController {
     
     func calculateRegionOfInterest() {
 
-        let scanRect = cutoutView.convert(cutoutView.holeView.frame, to: cameraView)
+        let scanRect = view.convert(cameraWindowView.frame, to: cameraView)
 
         let width = Double(scanRect.width / cameraView.frame.width)
         let height = Double(scanRect.height / cameraView.frame.height)
@@ -230,9 +273,7 @@ class ViewController: UIViewController {
     }
     
     func updateCutout() {
-//        let path = UIBezierPath(rect: cutoutView.frame)
-//        path.append(UIBezierPath(roundedRect: maskView.frame, cornerRadius: 8))
-//        maskLayer.path = path.cgPath
+        overlayView.setMaskedWindow(rect: cameraWindowView.frame)
     }
     
     func setupOrientationAndTransform() {
