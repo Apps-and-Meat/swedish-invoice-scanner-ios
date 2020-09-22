@@ -23,9 +23,6 @@
                                         <rect key="frame" x="0.0" y="0.0" width="187" height="50"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <state key="normal" title="Avbryt"/>
-                                        <connections>
-                                            <action selector="didTapReset" destination="BYZ-38-t0r" eventType="touchUpInside" id="VRY-vr-MsE"/>
-                                        </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5Q0-aC-AFm">
                                         <rect key="frame" x="187" y="0.0" width="187" height="50"/>

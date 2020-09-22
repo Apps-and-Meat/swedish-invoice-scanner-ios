@@ -8,15 +8,6 @@ Utilities for dealing with recognized strings
 import Foundation
 
 extension Character {
-	// Given a list of allowed characters, try to convert self to those in list
-	// if not already in it. This handles some common misclassifications for
-	// characters that are visually similar and can only be correctly recognized
-	// with more context and/or domain knowledge. Some examples (should be read
-	// in Menlo or some other font that has different symbols for all characters):
-	// 1 and l are the same character in Times New Roman
-	// I and l are the same character in Helvetica
-	// 0 and O are extremely similar in many fonts
-	// oO, wW, cC, sS, pP and others only differ by size in many fonts
 	func getSimilarCharacterIfNotIn(allowedChars: String) -> Character {
 		let conversionTable = [
 			"s": "S",
@@ -55,7 +46,7 @@ extension String {
     struct ExtractedInvoiceValue: Hashable {
         let range: Range<String.Index>
         let value: String
-        let type: ViewController.CaptureType
+        let type: CaptureType
     }
     
     func extractInvoiceValue() -> ExtractedInvoiceValue? {
@@ -75,21 +66,17 @@ extension String {
     }
     
     func extractBankGiroNumber() -> (Range<String.Index>, String)? {
-
+        var result = ""
+        let allowedChars = "0123456789#"
         let pattern = "[1-9]\\d{6,7}#\\d{2}#"
         
         guard let range = self.range(of: pattern, options: .regularExpression, range: nil, locale: nil) else {
-            // No phone number found.
             return nil
         }
 
-        let phoneNumberDigits = String(self[range])
-        
-        
-        // Substitute commonly misrecognized characters, for example: 'S' -> '5' or 'l' -> '1'
-        var result = ""
-        let allowedChars = "0123456789#"
-        for var char in phoneNumberDigits {
+        let digits = String(self[range])
+
+        for var char in digits {
             char = char.getSimilarCharacterIfNotIn(allowedChars: allowedChars)
             guard allowedChars.contains(char) else {
                 return nil
@@ -100,25 +87,21 @@ extension String {
     }
     
     func extractSwedishInvoiceNumber() -> (Range<String.Index>, String)? {
-
+        var result = ""
+        let allowedChars = "0123456789# "
         let pattern = "\\d{3,20}\\s#"
         
         guard let range = self.range(of: pattern, options: .regularExpression, range: nil, locale: nil) else {
-            // No phone number found.
             return nil
         }
 
-        let phoneNumberDigits = String(self[range])
+        let digits = String(self[range])
         
-        // Must be exactly 10 digits.
-        guard phoneNumberDigits.count > 5, phoneNumberDigits.count < 25 else {
+        guard digits.count > 5, digits.count < 25 else {
             return nil
         }
-        
-        // Substitute commonly misrecognized characters, for example: 'S' -> '5' or 'l' -> '1'
-        var result = ""
-        let allowedChars = "0123456789# "
-        for var char in phoneNumberDigits {
+
+        for var char in digits {
             char = char.getSimilarCharacterIfNotIn(allowedChars: allowedChars)
             guard allowedChars.contains(char) else {
                 return nil
@@ -129,22 +112,19 @@ extension String {
     }
     
     func extractAmount() -> (Range<String.Index>, String)? {
-        print(self)
-
-        let pattern = "\\d{1,7}\\s[05]0"
-        guard let range = self.range(of: pattern, options: .regularExpression, range: nil, locale: nil) else {
-            // No phone number found.
-            return nil
-        }
-        
-
-
-        let phoneNumberDigits = String(self[range])
-        
-        // Substitute commonly misrecognized characters, for example: 'S' -> '5' or 'l' -> '1'
         var result = ""
         let allowedChars = "0123456789 "
-        for var char in phoneNumberDigits {
+        let pattern = "\\d{1,7}\\s[05]0"
+
+        guard let range = self.range(of: pattern, options: .regularExpression, range: nil, locale: nil) else {
+            return nil
+        }
+
+        let digits = String(self[range])
+        
+
+
+        for var char in digits {
             char = char.getSimilarCharacterIfNotIn(allowedChars: allowedChars)
             guard allowedChars.contains(char) else {
                 return nil
@@ -155,7 +135,7 @@ extension String {
     }
 }
 
-class StringTracker {
+class CameraScannerStringTracker {
 	var frameIndex: Int64 = 0
 
 	typealias StringObservation = (lastSeen: Int64, count: Int64)

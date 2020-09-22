@@ -12,14 +12,59 @@ import UIKit
 import AVFoundation
 import Vision
 
+class InvoiceResultsView: UIView {
+    @IBOutlet weak var referensLabel: UILabel!
+    @IBOutlet weak var amountLabel: UILabel!
+    @IBOutlet weak var accountNumberLabel: UILabel!
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+
+    private func setup() {
+        layer.cornerRadius = 8
+    }
+}
+
+enum CaptureType: Hashable {
+    case reference
+    case amount
+    case accountNumber
+}
+
 class VisionViewController: ViewController {
+
+    @IBOutlet weak var resultsView: InvoiceResultsView?
+
+    var reference: String? {
+        didSet {
+            resultsView?.referensLabel.text = String(reference?.split(separator: " ").first ?? "")
+        }
+    }
+
+    var amount: String? {
+        didSet {
+            resultsView?.amountLabel.text = amount?.replacingOccurrences(of: " ", with: ",")
+        }
+    }
+
+    var accountNumber: String? {
+        didSet {
+            resultsView?.accountNumberLabel.text = String(accountNumber?.split(separator: "#").first ?? "")
+        }
+    }
+
 	var request: VNRecognizeTextRequest!
 	// Temporal string tracker
-	let numberTracker = StringTracker()
+	let numberTracker = CameraScannerStringTracker()
 	
 	override func viewDidLoad() {
-		// Set up vision request before letting ViewController set up the camera
-		// so that it exists when the first buffer is received.
 		request = VNRecognizeTextRequest(completionHandler: recognizeTextHandler)
 
 		super.viewDidLoad()
@@ -30,8 +75,7 @@ class VisionViewController: ViewController {
 	// Vision recognition handler.
 	func recognizeTextHandler(request: VNRequest, error: Error?) {
         var values = [String.ExtractedInvoiceValue]()
-		var redBoxes = [CGRect]() // Shows all recognized text lines
-		var greenBoxes = [CGRect]() // Shows words that might be serials
+		var boxes = [CGRect]()
 		
 		guard let results = request.results as? [VNRecognizedTextObservation] else {
 			return
@@ -41,42 +85,66 @@ class VisionViewController: ViewController {
 		
 		for visionResult in results {
 			guard let candidate = visionResult.topCandidates(maximumCandidates).first else { continue }
-			
-			// Draw red boxes around any detected text, and green boxes around
-			// any detected phone numbers. The phone number may be a substring
-			// of the visionResult. If a substring, draw a green box around the
-			// number and a red box around the full string. If the number covers
-			// the full result only draw the green box.
-			var numberIsSubstring = true
             
 			if let result = candidate.string.extractInvoiceValue() {
-//				let (range, number) = result
-				// Number may not cover full visionResult. Extract bounding box
-				// of substring.
                 if let box = try? candidate.boundingBox(for: result.range)?.boundingBox, box.minX > 0.06 {
-                    print(box.minX)
                     values.append(result)
-					greenBoxes.append(box)
-                    numberIsSubstring = !(result.range.lowerBound == candidate.string.startIndex &&
-                                            result.range.upperBound == candidate.string.endIndex)
+                    boxes.append(box)
 				}
-			}
-			if numberIsSubstring {
-				redBoxes.append(visionResult.boundingBox)
 			}
 		}
 		
 		// Log any found numbers.
 		numberTracker.logFrame(strings: values)
-		show(boxGroups: [(color: UIColor.red.cgColor, boxes: redBoxes), (color: UIColor.green.cgColor, boxes: greenBoxes)])
+		show(boxes: boxes)
 		
 		// Check if we have any temporally stable numbers.
 		if let sureExtractedValue = numberTracker.getStableString() {
-            showString(string: sureExtractedValue.value, type: sureExtractedValue.type)
+            didFindString(string: sureExtractedValue.value, type: sureExtractedValue.type)
 			numberTracker.reset(string: sureExtractedValue)
 		}
 	}
-	
+
+    func didFindString(string: String, type: CaptureType) {
+
+        guard currentStringFor(type: type) != string else { return }
+
+        captureSessionQueue.sync {
+            DispatchQueue.main.async {
+                switch type {
+                case .accountNumber:
+                    self.accountNumber = string
+                case .amount:
+                    self.amount = string
+                case .reference:
+                    self.reference = string
+                }
+
+                self.cameraView.alpha = 0
+                UIView.animate(withDuration: 0.5) {
+                    self.cameraView.alpha = 1
+                }
+            }
+        }
+    }
+
+    private func currentStringFor(type: CaptureType) -> String? {
+        switch type {
+        case .accountNumber:
+            return accountNumber
+        case .amount:
+            return amount
+        case .reference:
+            return reference
+        }
+    }
+
+    @IBAction func didTapReset() {
+        self.reference = nil
+        self.accountNumber = nil
+        self.amount = nil
+    }
+
 	override func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
 		if let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
 			// Configure for running in real-time.
@@ -92,45 +160,6 @@ class VisionViewController: ViewController {
 				try requestHandler.perform([request])
 			} catch {
 				print(error)
-			}
-		}
-	}
-	
-	// MARK: - Bounding box drawing
-	
-	// Draw a box on screen. Must be called from main queue.
-	var boxLayer = [CAShapeLayer]()
-	func draw(rect: CGRect, color: CGColor) {
-		let layer = CAShapeLayer()
-		layer.opacity = 0.5
-		layer.borderColor = color
-		layer.borderWidth = 1
-		layer.frame = rect
-		boxLayer.append(layer)
-        cameraView.videoPreviewLayer.insertSublayer(layer, at: 1)
-	}
-	
-	// Remove all drawn boxes. Must be called on main queue.
-	func removeBoxes() {
-		for layer in boxLayer {
-			layer.removeFromSuperlayer()
-		}
-		boxLayer.removeAll()
-	}
-	
-	typealias ColoredBoxGroup = (color: CGColor, boxes: [CGRect])
-	
-	// Draws groups of colored boxes.
-	func show(boxGroups: [ColoredBoxGroup]) {
-		DispatchQueue.main.async {
-			let layer = self.cameraView.videoPreviewLayer
-			self.removeBoxes()
-			for boxGroup in boxGroups {
-				let color = boxGroup.color
-				for box in boxGroup.boxes {
-					let rect = layer.layerRectConverted(fromMetadataOutputRect: box.applying(self.visionToAVFTransform))
-					self.draw(rect: rect, color: color)
-				}
 			}
 		}
 	}

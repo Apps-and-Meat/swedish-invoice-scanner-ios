@@ -9,25 +9,7 @@ import UIKit
 import AVFoundation
 import Vision
 
-class InvoiceResultsView: UIView {
-    @IBOutlet weak var referensLabel: UILabel!
-    @IBOutlet weak var amountLabel: UILabel!
-    @IBOutlet weak var accountNumberLabel: UILabel!
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setup()
-    }
-
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setup()
-    }
-
-    private func setup() {
-        layer.cornerRadius = 8
-    }
-}
 
 class MaskView: UIView {
     override init(frame: CGRect) {
@@ -49,7 +31,7 @@ class MaskView: UIView {
 }
 
 extension ViewController {
-    
+
     class OverlayView: UIView {
 
         let maskLayer: CAShapeLayer = {
@@ -88,7 +70,6 @@ extension ViewController {
 class ViewController: UIViewController {
 
     // MARK: - UI objects
-    @IBOutlet weak var resultsView: InvoiceResultsView?
     @IBOutlet weak var cameraWindowView: MaskView!
 
     @IBInspectable var overlayColor: UIColor? {
@@ -98,24 +79,6 @@ class ViewController: UIViewController {
 
     var cameraView = PreviewView()
     var overlayView = OverlayView()
-
-    var reference: String? {
-        didSet {
-            resultsView?.referensLabel.text = String(reference?.split(separator: " ").first ?? "")
-        }
-    }
-    
-    var amount: String? {
-        didSet {
-            resultsView?.amountLabel.text = amount?.replacingOccurrences(of: " ", with: ",")
-        }
-    }
-    
-    var accountNumber: String? {
-        didSet {
-            resultsView?.accountNumberLabel.text = String(accountNumber?.split(separator: "#").first ?? "")
-        }
-    }
     
 //    var maskLayer = CAShapeLayer()
     // Device orientation. Updated whenever the orientation changes to a
@@ -346,51 +309,50 @@ class ViewController: UIViewController {
     
     // MARK: - UI drawing and interaction
     
-    enum CaptureType: Hashable {
-        case reference
-        case amount
-        case accountNumber
+    func flash() {
+        self.cameraView.alpha = 0
+        UIView.animate(withDuration: 0.5) {
+            self.cameraView.alpha = 1
+        }
     }
-    
-    func showString(string: String, type: CaptureType) {
-        
-        guard currentStringFor(type: type) != string else { return }
 
-        captureSessionQueue.sync {
-            DispatchQueue.main.async {
-                switch type {
-                case .accountNumber:
-                    self.accountNumber = string
-                case .amount:
-                    self.amount = string
-                case .reference:
-                    self.reference = string
-                }
-                
-                self.cameraView.alpha = 0
-                UIView.animate(withDuration: 0.5) {
-                    self.cameraView.alpha = 1
-                }
+    // MARK: - Bounding box drawing
+    // Draw a box on screen. Must be called from main queue.
+
+    var boxLayer = [CAShapeLayer]()
+
+    func removeBoxes() {
+        for layer in boxLayer {
+            layer.removeFromSuperlayer()
+        }
+        boxLayer.removeAll()
+    }
+
+    typealias ColoredBoxGroup = (color: CGColor, boxes: [CGRect])
+
+    func show(boxes: [CGRect]) {
+        DispatchQueue.main.async {
+            let layer = self.cameraView.videoPreviewLayer
+            self.removeBoxes()
+            for box in boxes {
+                let rect = layer.layerRectConverted(fromMetadataOutputRect: box.applying(self.visionToAVFTransform))
+                self.draw(box: rect)
             }
+
         }
     }
-    
-    private func currentStringFor(type: CaptureType) -> String? {
-        switch type {
-        case .accountNumber:
-            return accountNumber
-        case .amount:
-            return amount
-        case .reference:
-            return reference
-        }
+
+    private func draw(box: CGRect) {
+        let layer = CAShapeLayer()
+        layer.opacity = 1
+        layer.borderColor = UIColor.systemBlue.cgColor
+        layer.borderWidth = 2
+        layer.cornerRadius = 8
+        layer.frame = box.inset(by: .init(top: -10, left: -10, bottom: -10, right: -10))
+        boxLayer.append(layer)
+        cameraView.videoPreviewLayer.insertSublayer(layer, at: 1)
     }
-    
-    @IBAction func didTapReset() {
-        self.reference = nil
-        self.accountNumber = nil
-        self.amount = nil
-    }
+
 }
 
 // MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
