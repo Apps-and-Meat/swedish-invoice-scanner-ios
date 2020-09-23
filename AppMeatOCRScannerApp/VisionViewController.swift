@@ -9,8 +9,6 @@ Vision view controller.
 
 import Foundation
 import UIKit
-import AVFoundation
-import Vision
 
 class InvoiceResultsView: UIView {
     @IBOutlet weak var referensLabel: UILabel!
@@ -59,53 +57,10 @@ class VisionViewController: ViewController {
             resultsView?.accountNumberLabel.text = String(accountNumber?.split(separator: "#").first ?? "")
         }
     }
-
-	var request: VNRecognizeTextRequest!
-	// Temporal string tracker
-	let numberTracker = CameraScannerStringTracker()
-	
-	override func viewDidLoad() {
-		request = VNRecognizeTextRequest(completionHandler: recognizeTextHandler)
-
-		super.viewDidLoad()
-	}
 	
 	// MARK: - Text recognition
-	
-	// Vision recognition handler.
-	func recognizeTextHandler(request: VNRequest, error: Error?) {
-        var values = [String.ExtractedInvoiceValue]()
-		var boxes = [CGRect]()
-		
-		guard let results = request.results as? [VNRecognizedTextObservation] else {
-			return
-		}
-		
-		let maximumCandidates = 1
-		
-		for visionResult in results {
-			guard let candidate = visionResult.topCandidates(maximumCandidates).first else { continue }
-            
-			if let result = candidate.string.extractInvoiceValue() {
-                if let box = try? candidate.boundingBox(for: result.range)?.boundingBox, box.minX > 0.06 {
-                    values.append(result)
-                    boxes.append(box)
-				}
-			}
-		}
-		
-		// Log any found numbers.
-		numberTracker.logFrame(strings: values)
-		show(boxes: boxes)
-		
-		// Check if we have any temporally stable numbers.
-		if let sureExtractedValue = numberTracker.getStableString() {
-            didFindString(string: sureExtractedValue.value, type: sureExtractedValue.type)
-			numberTracker.reset(string: sureExtractedValue)
-		}
-	}
 
-    func didFindString(string: String, type: CaptureType) {
+    override func didFindString(string: String, type: CaptureType) {
 
         guard currentStringFor(type: type) != string else { return }
 
@@ -144,23 +99,4 @@ class VisionViewController: ViewController {
         self.accountNumber = nil
         self.amount = nil
     }
-
-	override func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-		if let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
-			// Configure for running in real-time.
-			request.recognitionLevel = .fast
-			// Language correction won't help recognizing phone numbers. It also
-			// makes recognition slower.
-			request.usesLanguageCorrection = false
-			// Only run on the region of interest for maximum speed.
-			request.regionOfInterest = regionOfInterest
-			
-			let requestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: textOrientation, options: [:])
-			do {
-				try requestHandler.perform([request])
-			} catch {
-				print(error)
-			}
-		}
-	}
 }

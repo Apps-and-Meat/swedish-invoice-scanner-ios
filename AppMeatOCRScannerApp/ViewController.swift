@@ -9,8 +9,6 @@ import UIKit
 import AVFoundation
 import Vision
 
-
-
 class MaskView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -70,41 +68,42 @@ extension ViewController {
 class ViewController: UIViewController {
 
     // MARK: - UI objects
+
     @IBOutlet weak var cameraWindowView: MaskView!
+
+    var cameraView = PreviewView()
+    var overlayView = OverlayView()
 
     @IBInspectable var overlayColor: UIColor? {
         get { overlayView.backgroundColor }
         set { overlayView.backgroundColor = newValue }
     }
 
-    var cameraView = PreviewView()
-    var overlayView = OverlayView()
-    
-//    var maskLayer = CAShapeLayer()
-    // Device orientation. Updated whenever the orientation changes to a
-    // different supported orientation.
-    var currentOrientation = UIDeviceOrientation.portrait
-    
-    // MARK: - Capture related objects
+    // MARK: - String tracking
+
+    var request: VNRecognizeTextRequest!
+    // Temporal string tracker
+    let numberTracker = CameraScannerStringTracker()
+
+    // MARK: - Camera capture objects
+
     private let captureSession = AVCaptureSession()
-    let captureSessionQueue = DispatchQueue(label: "com.appmeat.invoice-scanner.CaptureSessionQueue")
+    let captureSessionQueue = DispatchQueue(label: "com.invoice-scanner.CaptureSessionQueue")
     
     var captureDevice: AVCaptureDevice?
     
     var videoDataOutput = AVCaptureVideoDataOutput()
-    let videoDataOutputQueue = DispatchQueue(label: "com.appmeat.invoice-scanner.VideoDataOutputQueue")
+    let videoDataOutputQueue = DispatchQueue(label: "com.invoice-scanner.VideoDataOutputQueue")
     
     // MARK: - Region of interest (ROI) and text orientation
     // Region of video data output buffer that recognition should be run on.
     // Gets recalculated once the bounds of the preview layer are known.
     var regionOfInterest = CGRect(x: 0, y: 0, width: 1, height: 1)
-    // Orientation of text to search for in the region of interest.
-    var textOrientation = CGImagePropertyOrientation.up
-    
+
     // MARK: - Coordinate transforms
     var bufferAspectRatio: Double!
     // Transform from UI orientation to buffer orientation.
-    var uiRotationTransform = CGAffineTransform.identity
+    var uiRotationTransform = CGAffineTransform(translationX: 0, y: 1).rotated(by: -CGFloat.pi / 2)
     // Transform bottom-left coordinates to top-left.
     var bottomToTopTransform = CGAffineTransform(scaleX: 1, y: -1).translatedBy(x: 0, y: -1)
     // Transform coordinates in ROI to global coordinates (still normalized).
@@ -197,13 +196,11 @@ class ViewController: UIViewController {
 
         setupCameraView()
         setupOverlayView()
-        
+
+        request = VNRecognizeTextRequest(completionHandler: recognizeTextHandler)
+
         // Set up preview view.
         cameraView.session = captureSession
-
-//        maskLayer.backgroundColor = UIColor.clear.cgColor
-//        maskLayer.fillRule = .evenOdd
-//        cutoutView.layer.mask = maskLayer
         
         // Starting the capture session is a blocking call. Perform setup using
         // a dedicated serial dispatch queue to prevent blocking the main thread.
@@ -244,14 +241,13 @@ class ViewController: UIViewController {
 
         // Compensate for region of interest.
         let roi = regionOfInterest
-        roiToGlobalTransform = CGAffineTransform(translationX: roi.origin.x, y: roi.origin.y).scaledBy(x: roi.width, y: roi.height)
-
-        // Compensate for orientation (buffers always come in the same orientation).
-        textOrientation = CGImagePropertyOrientation.right
-        uiRotationTransform = CGAffineTransform(translationX: 0, y: 1).rotated(by: -CGFloat.pi / 2)
+        roiToGlobalTransform = CGAffineTransform(translationX: roi.origin.x, y: roi.origin.y)
+            .scaledBy(x: roi.width, y: roi.height)
 
         // Full Vision ROI to AVF transform.
-        visionToAVFTransform = roiToGlobalTransform.concatenating(bottomToTopTransform).concatenating(uiRotationTransform)
+        visionToAVFTransform = roiToGlobalTransform
+            .concatenating(bottomToTopTransform)
+            .concatenating(uiRotationTransform)
     }
     
     func setupCamera() {
@@ -305,6 +301,46 @@ class ViewController: UIViewController {
         }
         
         captureSession.startRunning()
+    }
+
+    // MARK: - Text recognition
+
+    // Vision recognition handler.
+    func recognizeTextHandler(request: VNRequest, error: Error?) {
+        var values = [String.ExtractedInvoiceValue]()
+        var boxes = [CGRect]()
+
+        guard let results = request.results as? [VNRecognizedTextObservation] else {
+            return
+        }
+
+        let maximumCandidates = 1
+
+        for visionResult in results {
+            guard let candidate = visionResult.topCandidates(maximumCandidates).first else { continue }
+
+            if let result = candidate.string.extractInvoiceValue() {
+                if let box = try? candidate.boundingBox(for: result.range)?.boundingBox, box.minX > 0.06 {
+                    values.append(result)
+                    boxes.append(box)
+                }
+            }
+        }
+
+        // Log any found numbers.
+        numberTracker.logFrame(strings: values)
+        show(boxes: boxes)
+
+        // Check if we have any temporally stable numbers.
+        if let sureExtractedValue = numberTracker.getStableString() {
+            didFindString(string: sureExtractedValue.value, type: sureExtractedValue.type)
+            numberTracker.reset(string: sureExtractedValue)
+        }
+    }
+
+    // MARK: - Abstract method, implement in subclass
+    open func didFindString(string: String, type: CaptureType) {
+
     }
     
     // MARK: - UI drawing and interaction
@@ -360,6 +396,21 @@ class ViewController: UIViewController {
 extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        // This is implemented in VisionViewController.
+        if let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
+            // Configure for running in real-time.
+            request.recognitionLevel = .fast
+            // Language correction won't help recognizing phone numbers. It also
+            // makes recognition slower.
+            request.usesLanguageCorrection = false
+            // Only run on the region of interest for maximum speed.
+            request.regionOfInterest = regionOfInterest
+
+            let requestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .right, options: [:])
+            do {
+                try requestHandler.perform([request])
+            } catch {
+                print(error)
+            }
+        }
     }
 }
