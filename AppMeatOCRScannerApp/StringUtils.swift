@@ -67,8 +67,8 @@ extension String {
     
     func extractBankGiroNumber() -> (Range<String.Index>, String)? {
         var result = ""
-        let allowedChars = "0123456789#"
-        let pattern = "[1-9]\\d{6,7}#\\d{2}#"
+        let allowedChars = "0123456789# "
+        let pattern = "[1-9]\\d{6,7}\\s?#\\s?\\d{2}\\s?#"
         
         guard let range = self.range(of: pattern, options: .regularExpression, range: nil, locale: nil) else {
             return nil
